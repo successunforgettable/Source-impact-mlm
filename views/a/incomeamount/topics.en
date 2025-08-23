@@ -18,6 +18,8 @@
 <option [% IF bonusType=='Binary' %]selected[% END %] value='Binary'>Pairing</option>
 <option [% IF bonusType=='Up' %]selected[% END %] value='Up'>Team</option>
 <option [% IF bonusType=='Down' %]selected[% END %] value='Down'>Leader</option>
+<option [% IF bonusType=='2-Up' %]selected[% END %] value='2-Up'>2-Up</option>
+<option [% IF bonusType=='Leadership' %]selected[% END %] value='Leadership'>Leadership</option>
 </select>
     </div>
     <div class="col-sm-2">

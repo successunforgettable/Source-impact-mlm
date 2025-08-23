@@ -9,7 +9,15 @@
 		"week1_affiliate" :{"method":["GET"]},
 		"run_to_yesterday":{"method":["GET"]},
 		"run_daily"       :{"method":["GET"]},
-		"run_all_tests"   :{"method":["GET"]}
+		"run_all_tests"   :{"method":["GET"]},
+        "week1_2up": {
+          "validate": ["weekid"],
+          "method": ["GET", "POST"]
+        },
+        "week1_leadership": {
+          "validate": ["weekid"],
+          "method": ["GET", "POST"]
+        }
 	},
     "fks" : {
         "m" : ["memberid"]

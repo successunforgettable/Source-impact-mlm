@@ -1,12 +1,12 @@
 {
-    "Document_root" : "/SAMPLE_home/mlm/www",
-	"Server_url"    : "http://SAMPLE_domain",
+    "Document_root" : "/app/mlm/www",
+	"Server_url"    : "http://127.0.0.1",
     "Project"       : "MLM",
     "Script"        : "/cgi-bin/goto",
-    "Template"      : "/SAMPLE_home/mlm/views",
-    "Uploaddir"     : "/SAMPLE_home/mlm/www/product",
+    "Template"      : "/app/mlm/views",
+    "Uploaddir"     : "/app/mlm/www/product",
     "Pubrole"       : "p",
-    "Secret"   : "SAMPLE_random_SAMPLE_random_SAMPLE_random_SAMPLE_random",
+    "Secret"   : "4cbcb3630567fcbd6a56f7b5b840632bbb38bc7db8e8cb7986c41c99d5fff4e9",
     "Custom"   : {
         "SHOP_typeid":100,
         "TOP_memberid":1,
@@ -97,22 +97,22 @@
     },
 
     "Log" : {
-        "filename": "/SAMPLE_home/mlm/logs/debug.log",
+        "filename": "/app/mlm/logs/debug.log",
         "minlevel": 0,
         "maxlevel": "info"
     },
 
-    "Db" : ["dbi:mysql:SAMPLE_dbname:SAMPLE_host:3306", "SAMPLE_user", "SAMPLE_password"],
+    "Db" : ["dbi:mysql:mlm_db:127.0.0.1:3306", "mlm_user", "mlm_password123"],
 
     "Roles" : {
         "m": {
             "Id_name": "memberid",
             "Type_id": 2,
             "Attributes": ["login", "memberid", "m_active", "m_type", "m_email", "m_firstname", "m_lastname", "m_sid", "m_pid", "m_top", "m_leg"],
-            "Secret": "SAMPLE_random_SAMPLE_random_SAMPLE_random_SAMPLE_random",
-            "Coding": "SAMPLE_random_SAMPLE_random_SAMPLE_random_SAMPLE_random",
+            "Secret": "4cbcb3630567fcbd6a56f7b5b840632bbb38bc7db8e8cb7986c41c99d5fff4e9",
+            "Coding": "4cbcb3630567fcbd6a56f7b5b840632bbb38bc7db8e8cb7986c41c99d5fff4e9",
             "Surface": "cm",
-            "Domain": "SAMPLE_domain",
+            "Domain": "127.0.0.1",
             "Duration": 86400,
             "Max_age": 86400,
             "Logout": "/",
@@ -133,11 +133,11 @@
             "Attributes" : ["adminlogin","adminid"],
             "Type_id" : 1,
             "Surface" : "ca",
-            "Domain" : "SAMPLE_domain",
+            "Domain" : "127.0.0.1",
             "Duration" : 86400,
             "Max_age"  : 86400,
-            "Secret": "SAMPLE_random_SAMPLE_random_SAMPLE_random_SAMPLE_random",
-            "Coding": "SAMPLE_random_SAMPLE_random_SAMPLE_random_SAMPLE_random",
+            "Secret": "4cbcb3630567fcbd6a56f7b5b840632bbb38bc7db8e8cb7986c41c99d5fff4e9",
+            "Coding": "4cbcb3630567fcbd6a56f7b5b840632bbb38bc7db8e8cb7986c41c99d5fff4e9",
             "Logout" : "/",
             "Issuers" : {
                 "db" : {
@@ -153,7 +153,7 @@
 		"3001" : "wrong privilege",
 		"3002" : "wrong admin",
 		"3003" : "wrong login name format",
-		
+
         "3005" : "Wrong starting or ending time.",
         "3006" : "Empty searching string.",
 

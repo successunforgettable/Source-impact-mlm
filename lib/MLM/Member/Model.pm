@@ -8,7 +8,20 @@ use vars qw($AUTOLOAD @ISA);
 
 sub dashboard {
   my $self = shift;
-  return $self->edit(shift) || $self->process_after("dashboard", @_);
+  my $err = $self->edit(shift);
+  return $err if $err;
+
+  my $status_data = [];
+  $err = $self->select_sql($status_data, "SELECT qualification_status, sales_count FROM member_2up WHERE memberid = ?", $self->{ARGS}->{memberid});
+  return $err if $err;
+  $self->{ARGS}->{twoup_status} = $status_data->[0] if @$status_data;
+
+  my $leadership_data = [];
+  $err = $self->select_sql($leadership_data, "SELECT rank_name FROM member_leadership WHERE memberid = ?", $self->{ARGS}->{memberid});
+  return $err if $err;
+  $self->{ARGS}->{leadership_rank} = $leadership_data->[0] if @$leadership_data;
+
+  return $self->process_after("dashboard", @_);
 }
   
 sub startnew {

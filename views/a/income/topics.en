@@ -17,6 +17,10 @@
 <option [% IF classify=='direct' %]selected[% END %] value='direct'>Direct</option>
 <option [% IF classify=='binary' %]selected[% END %] value='binary'>Pairing</option>
 <option [% IF classify=='matchup' %]selected[% END %] value='matchup'>Team</option>
+<option [% IF classify=='2up_it' %]selected[% END %] value='2up_it'>2-Up iT</option>
+<option [% IF classify=='2up_iq' %]selected[% END %] value='2up_iq'>2-Up iQ</option>
+<option [% IF classify=='2up_direct' %]selected[% END %] value='2up_direct'>2-Up Direct</option>
+<option [% IF classify=='leadership_pool' %]selected[% END %] value='leadership_pool'>Leadership</option>
 </select>
 	</div>
 	<div class="col-sm-2">
