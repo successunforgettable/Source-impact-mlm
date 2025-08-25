@@ -12,19 +12,15 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
 RUN sed -i 's/Listen 80/Listen 8080/' /etc/apache2/ports.conf
 RUN a2enmod cgid && a2enmod alias
 
-# Put the whole repo in /app
+# Put the whole repo in /app (your repo root IS the app root)
 WORKDIR /app
 COPY . /app
 
-# ✅ Your repo root is the app; make a stable path for Apache/config.json
-# /app/mlm -> /app (so /app/mlm/www == /app/www)
-RUN ln -s /app /app/mlm || true
-
-# Optional: if you later add cgi-bin/goto, make sure it can execute
-RUN chmod +x /app/mlm/cgi-bin/goto 2>/dev/null || true
-
-# Apache vhost (expects /app/mlm/www and /app/mlm/cgi-bin/goto)
+# Apache vhost now points to /app/www and /app/cgi-bin
 COPY docker/app/mlm-apache.conf /etc/apache2/sites-available/000-default.conf
+
+# Make CGI scripts executable (if present)
+RUN chmod +x /app/cgi-bin/* 2>/dev/null || true
 
 ENV APP_ENV=production \
     PORT=8080
