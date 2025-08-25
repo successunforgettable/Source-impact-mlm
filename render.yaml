@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: impact-mlm
+    env: docker
+    plan: starter        # change if you want "standard" or above
+    dockerfilePath: docker/app/Dockerfile
+    autoDeploy: true
+
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: PORT
+        value: 8080
+
+      # Database connection (update these with Render DB values)
+      - key: DB_HOST
+        value: 127.0.0.1
+      - key: DB_USER
+        value: mlm_user
+      - key: DB_PASS
+        value: mlm_password123
