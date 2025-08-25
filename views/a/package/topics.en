@@ -1,18 +1,18 @@
 [% INCLUDE start.en %]
 
-<h4>Package of Combined Products</h4>
+<h4>Phase Challenge Packages</h4>
 
     <div class="table-responsive">
         <table class="table table-striped">
             <thead class="thead-dark">
 <tr>
 <th>#</th>
+<th>Phase</th>
 <th>Type/Name</th>
 <th>Description</th>
 <th>Price</th>
 <th>Fee</th>
-<th>BV</th>
-<th>Num</th>
+<th>Unlock Condition</th>
 <th> </th>
 <th> </th>
 </tr>
@@ -22,6 +22,7 @@
 <input type=hidden name=action value="update">
 <tr>
 <td><a href="packagedetail?action=topics&packageid=[% item.packageid %]">[% item.packageid %]</a></td>
+<td><input class="form-control form-control-sm" type=number name=phase_number value='[% item.phase_number || 0 %]' min=0 max=99></td>
 <td><select class="form-control form-control-sm" name=typeid>[% FOREACH t=packagetype_topics %]
 <option [% IF (item.typeid==t.typeid) %]selected[% END %] value=[% t.typeid %]>[% t.name %]</option>
 [% END %]</select>
@@ -30,8 +31,11 @@
 <td><textarea class="form-control" name=description rows=3>[% item.description %]</textarea></td>
 <td>[% item.price %]</td>
 <td>[% item.sh %]</td>
-<td>[% item.packagetype_topics.0.bv %]</td>
-<td>[% item.sumnum %]</td>
+<td><select class="form-control form-control-sm" name=unlock_condition>
+<option [% IF item.unlock_condition=='always_available' %]selected[% END %] value='always_available'>Always Available</option>
+<option [% IF item.unlock_condition=='previous_phase_completed' %]selected[% END %] value='previous_phase_completed'>Previous Phase Required</option>
+<option [% IF item.unlock_condition=='admin_unlock' %]selected[% END %] value='admin_unlock'>Admin Only</option>
+</select></td>
 <td><button class="btn btn-sm btn-primary" type=submit>Upd</button></td>
 <td><a class="btn btn-sm btn-danger" onclick="javascript:confirm('Are you sure to delete this package?')" href="package?action=delete&packageid=[% item.packageid %]">DEL</a></td>
 </tr>
@@ -46,14 +50,18 @@
         <div class="col-md-12 order-md-1">
             <div class="row">
               <div class="col-md-4 mb-3">
-                <label for="title">Package Title</label>
-                <input type="text" class="form-control" id="title" name="title" placeholder="Name of Package" required>
+                <label for="title">Challenge Title</label>
+                <input type="text" class="form-control" id="title" name="title" placeholder="Name of Challenge" required>
                 <div class="invalid-feedback">
-                  Valid first name is required.
+                  Valid title is required.
                 </div>
               </div>
               <div class="col-md-4 mb-3">
-                <label for="typeid">Package Type</label>
+                <label for="phase_number">Phase Number</label>
+                <input type="number" class="form-control" name="phase_number" placeholder="0-99" min="0" max="99" required>
+              </div>
+              <div class="col-md-4 mb-3">
+                <label for="typeid">Challenge Type</label>
                 <select class="form-control" name="typeid"><option value="">--select--</option>[% FOREACH t=packagetype_topics %]
 <option value=[% t.typeid %]>[% t.name %]</option>
 [% END %]</select>
@@ -76,3 +84,6 @@
 </form>
 
 [% INCLUDE end.en %]
+
+
+

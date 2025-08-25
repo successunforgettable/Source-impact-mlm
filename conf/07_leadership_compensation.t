@@ -1,0 +1,1 @@
+// Placeholder content for conf/07_leadership_compensation.t

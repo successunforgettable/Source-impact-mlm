@@ -8,8 +8,8 @@ use vars qw(@ISA);
 @ISA = qw(Genelet::Beacon);
 
 __PACKAGE__->setup_accessors(
-  config => Genelet::Dispatch::get_hash("/home/open/mlm/conf/config.json"),
-  lib    => '/home/open/mlm/lib',
+  config => Genelet::Dispatch::get_hash("/Users/arfeenkhan/mlm-project/mlm/conf/config.json"),
+  lib    => '/Users/arfeenkhan/mlm-project/mlm/lib',
   ip     => '192.168.29.29',
   comps  => ["Admin","Affiliate","Signup","Member","Sponsor","Placement","Category","Gallery","Package", "Packagedetail","Packagetype","Sale","Basket","Lineitem","Income","Incomeamount","Ledger","Tt","Ttpost","Week1","Week4","Affiliate"],
   tag    => 'json',

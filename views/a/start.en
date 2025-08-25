@@ -47,11 +47,13 @@
         </div>
       </li>
       <li class="nav-item dropdown">
-        <a class="nav-link dropdown-toggle" href="#" id="dropdown1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Product</a>
+        <a class="nav-link dropdown-toggle" href="#" id="dropdown1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Challenges</a>
         <div class="dropdown-menu" aria-labelledby="dropdown1">
-          <a class="dropdown-item" href="category">Categories</a>
-          <a class="dropdown-item" href="gallery">Product Items</a>
-          <a class="dropdown-item" href="package">Packages</a>
+          <a class="dropdown-item" href="category">Challenge Categories</a>
+          <a class="dropdown-item" href="gallery">Challenge Items</a>
+          <a class="dropdown-item" href="package">Phase Challenges</a>
+          <a class="dropdown-item" href="phase">Phase Management</a>
+          <a class="dropdown-item" href="challenge">Challenge Store</a>
         </div>
       </li>
       <li class="nav-item dropdown">

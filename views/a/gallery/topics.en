@@ -1,6 +1,6 @@
 [% INCLUDE start.en %]
 
-<h4>Product Items[% IF categoryid %] of Category [% categoryid %][% END %]</h4>
+<h4>Challenge Items[% IF categoryid %] of Category [% categoryid %][% END %]</h4>
 
     <div class="table-responsive">
         <table class="table table-striped">
@@ -68,8 +68,8 @@
 			</div>
 			<div class="row">
               <div class="col-md-4 mb-3">
-                <label for="title">Product Name</label>
-                <input type="text" class="form-control" id="title" name="title" placeholder="Title of the Product" required>
+                <label for="title">Challenge Name</label>
+                <input type="text" class="form-control" id="title" name="title" placeholder="Title of the Challenge" required>
                 <div class="invalid-feedback">
                   Valid title is required.
                 </div>

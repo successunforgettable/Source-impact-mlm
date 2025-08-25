@@ -33,13 +33,52 @@ sub signup_update {
   my $self = shift;
   my $ARGS = $self->{ARGS};
 
-  return $self->do_sql(
+  my $err = $self->do_sql(
 "UPDATE member_signup SET signupstatus='No' WHERE signupid=?",
 $ARGS->{signupid})
 #"UPDATE member SET defpid=NULL, defleg=NUL
 	|| $self->do_sql(
 "UPDATE member SET defpid=?
 WHERE defpid=? AND defleg=?", $ARGS->{memberid}, $ARGS->{pid}, $ARGS->{leg});
+
+  return $err if $err;
+
+  # Two-Up routing (baseline): initialize dual sponsors if configured
+  my $cfg = $self->{CUSTOM}->{TwoUp};
+  if ($cfg && $cfg->{enabled}) {
+    my $recruiter_id = $ARGS->{sid} || $ARGS->{pid};
+    my $new_user_id  = $ARGS->{memberid};
+    # Initialize tracking sponsor to recruiter
+    $self->do_sql("UPDATE member SET tracking_sponsor_id=? WHERE memberid=? AND (tracking_sponsor_id IS NULL OR tracking_sponsor_id=0)",
+      $recruiter_id, $new_user_id);
+
+    # Resolve pass-up routing: first two pass-ups go to recruiter's upline (real sponsor), keep afterward
+    my $tmp = {};
+    my $e2 = $self->get_args($tmp,
+      "SELECT real_sponsor_id, sid AS upline_sid, passups_given FROM member WHERE memberid=?",
+      $recruiter_id);
+    return $e2 if $e2;
+    my $passups = $tmp->{passups_given} || 0;
+    my $upline_real = $tmp->{real_sponsor_id} || $tmp->{upline_sid} || $cfg->{company_member_id} || $recruiter_id;
+
+    if ($passups < 2) {
+      # PASS-UP: assign new member's real sponsor to recruiter's real/upline; increment recruiter counter
+      $self->do_sql("UPDATE member SET real_sponsor_id=? WHERE memberid=?",
+        $upline_real, $new_user_id);
+      $self->do_sql("UPDATE member SET passups_given=passups_given+1 WHERE memberid=?", $recruiter_id);
+      # audit
+      my $reason = ($passups==0) ? 'PASSUP_1' : 'PASSUP_2';
+      $self->do_sql("INSERT INTO passup_event (recruit_user_id, recruiter_user_id, receiver_user_id, reason) VALUES (?,?,?,?)",
+        $new_user_id, $recruiter_id, $upline_real, $reason);
+    } else {
+      # KEEP: both real and tracking sponsor are recruiter
+      $self->do_sql("UPDATE member SET real_sponsor_id=? WHERE memberid=?",
+        $recruiter_id, $new_user_id);
+      $self->do_sql("INSERT INTO passup_event (recruit_user_id, recruiter_user_id, receiver_user_id, reason) VALUES (?,?,?,?)",
+        $new_user_id, $recruiter_id, $recruiter_id, 'KEEPER_3PLUS');
+    }
+  }
+  return;
 }
 
 sub add_family {

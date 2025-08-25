@@ -85,6 +85,7 @@ CREATE TABLE `cron_1week` (
   `statusBinary` enum('Yes','No') DEFAULT 'No',
   `statusUp` enum('Yes','No') DEFAULT 'No',
   `statusAffiliate` enum('Yes','No') DEFAULT 'No',
+  `statusTwoUp` enum('Yes','No') DEFAULT 'No',
   PRIMARY KEY (`c1_id`),
   KEY `daily` (`daily`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

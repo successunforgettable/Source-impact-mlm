@@ -1,43 +1,128 @@
 [% INCLUDE start.en %]
-[% SET item=dashboard.0 %]
+[% SET item = dashboard.0 %]
 
-      <!-- Main jumbotron for a primary marketing message or call to action -->
-      <div class="jumbotron">
-        <div class="container">
-          <h1 class="display-3">Hello, [% item.login %]!</h1>
-          <p>Type ID: [% m_type %]
-Name: [% item.name %] [% item.lastname %]
-Email: [% item.email %]
-Member ID: [% item.memberid %]
-Your Sponsor ID: [% item.sid %]
-Your Upline ID: [% item.pid %]
-Active Since: [% item.signuptime %]</p>
-          <p><a class="btn btn-primary btn-sm" href="member?action=startupdate" role="button">Learn more &raquo;</a></p>
-        </div>
-      </div>
+[%# Pull leadership ranks from config for label display (Assistant NTM, NTM, etc.) %]
+[% SET ranks = config.Custom.LEADERSHIP.ranks IF config && config.Custom && config.Custom.LEADERSHIP && config.Custom.LEADERSHIP.ranks %]
 
-      <h2>Sales Report</h2>
-      <div class="table-responsive">
-        <table class="table table-striped table-sm">
-          <thead>
-            <tr>
-              <th>Sponsoring</th>
-              <th>Left Leg</th>
-              <th>Right Leg</th>
-              <th>Left Sales Volume</th>
-              <th>Right Sales Volume</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>[% counts %]</td>
-              <td>[% item.countl %]</td>
-              <td>[% item.countr %]</td>
-              <td>[% item.milel %]</td>
-              <td>[% item.miler %]</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+[% BLOCK rank_title %]
+  [% IF ranks && item.leadership_position && ranks.${item.leadership_position} && ranks.${item.leadership_position}.label %]
+    [% ranks.${item.leadership_position}.label %]
+  [% ELSIF item.leadership_position %]
+    [% item.leadership_position %]
+  [% ELSE %]
+    -
+  [% END %]
+[% END %]
+
+<div class="jumbotron">
+  <div class="container">
+    <h1 class="display-3">Hello, [% item.login %]!</h1>
+    <p>
+      Type ID: [% m_type %]<br/>
+      Name: [% item.name %] [% item.lastname %]<br/>
+      Email: [% item.email %]<br/>
+      Member ID: [% item.memberid %]<br/>
+      Sponsor (SID): [% item.sid %] &nbsp;|&nbsp; Upline (PID): [% item.pid %]<br/>
+      Active Since: [% item.signuptime %]
+    </p>
+    <p><a class="btn btn-primary btn-sm" href="member?action=startupdate" role="button">Update Profile &raquo;</a></p>
+  </div>
+</div>
+
+<h2>2-Up Status</h2>
+<div class="table-responsive">
+  <table class="table table-striped table-sm">
+    <thead>
+      <tr>
+        <th>Member Status</th>
+        <th>Current Phase</th>
+        <th>Pass-Ups Completed</th>
+        <th>Direct Recruits</th>
+        <th>Next Milestone</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>
+          [% IF item.status == 'IQ' %]
+            IQ (Income Qualified)
+          [% ELSIF item.status == 'IT' %]
+            IT (In Training)
+          [% ELSE %]
+            [% item.status || '-' %]
+          [% END %]
+        </td>
+        <td>[% item.current_phase || 1 %]</td>
+        <td>[% item.pass_up_count || 0 %]</td>
+        <td>[% item.direct_recruits || 0 %]</td>
+        <td>
+          [% IF item.status != 'IQ' %]
+            Pass up [% 2 - (item.pass_up_count || 0) %] more to qualify (40% from 3rd onward)
+          [% ELSE %]
+            Keep advancing phases (need 2 people at your phase to qualify at that phase)
+          [% END %]
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<h3>Phase Qualification (Preview)</h3>
+<p class="text-muted">
+  Commissions at each phase flow to the nearest qualified person at that phase. You qualify at a phase when you have ≥2 people at that same phase in your downline. (Reference: 2-Up Phase rules) [oai_citation:1‡compensation_plan_spec.md](file-service://file-QZUC9cZJSpu4aZjy7FKncK).
+</p>
+
+<div class="table-responsive">
+  <table class="table table-bordered table-sm">
+    <thead>
+      <tr>
+        <th>Phase</th>
+        <th>Your Status</th>
+        <th># People at Phase</th>
+        <th>Qualified?</th>
+      </tr>
+    </thead>
+    <tbody>
+      [% FOREACH ph IN [1,2,3,4,5,6,7,8,9,10] %]
+      <tr>
+        <td>Phase [% ph %]</td>
+        <td>
+          [% IF (item.current_phase || 1) >= ph %] Reached [% ELSE %] Not Reached [% END %]
+        </td>
+        <td>[% item.phase_counts.${ph} || 0 %]</td>
+        <td>
+          [% IF (item.phase_counts.${ph} || 0) >= 2 %] Yes [% ELSE %] No [% END %]
+        </td>
+      </tr>
+      [% END %]
+    </tbody>
+  </table>
+</div>
+
+<h2>Leadership</h2>
+<div class="table-responsive">
+  <table class="table table-striped table-sm">
+    <thead>
+      <tr>
+        <th>Position</th>
+        <th>Status</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>[% PROCESS rank_title %]</td>
+        <td>[% item.leadership_qual_status || '-' %]</td>
+        <td>
+          Assistant NTM 5% → NTM 10%; VP 2%, President 1%, RD 1% (total 14%) [oai_citation:2‡compensation_plan_spec.md](file-service://file-QZUC9cZJSpu4aZjy7FKncK).
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p class="text-muted">
+  This system implements only the 2-Up (40%) and Leadership (14%) compensation; legacy binary/unilevel/team/affiliate displays are removed [oai_citation:3‡compensation_plan_spec.md](file-service://file-QZUC9cZJSpu4aZjy7FKncK) [oai_citation:4‡README (1).md](file-service://file-QA8GSpqnWmBT7p8mZ4ixvj).
+</p>
 
 [% INCLUDE end.en %]

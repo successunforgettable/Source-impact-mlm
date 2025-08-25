@@ -11,7 +11,7 @@ sub initialize {
   my $self = shift;
 
   return {
-	config=>"/home/open/mlm/conf/config.json",
+	config=>"/Users/arfeenkhan/mlm-project/mlm/conf/config.json",
 	data=>"unit.json",
 	component=>"component.json"
   };

@@ -1,6 +1,6 @@
 [% INCLUDE start.en %]
 
-<h4>Product Categories</h4>
+<h4>Challenge Categories</h4>
 
     <div class="table-responsive">
         <table class="table table-striped">
