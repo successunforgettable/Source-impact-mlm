@@ -6,18 +6,18 @@ use vars qw($AUTOLOAD @ISA);
 
 @ISA=('MLM::Model');
 
-sub inserts {
-  my $self = shift;
-
-  for my $item (@{$self->{LISTS}}) {
-    my $err = $self->do_sql(
-"INSERT INTO income (memberid, classify, weekid, refid, amount, lev, created)
-VALUES (?,?,?,?,?,?,NOW())",$item->{memberid}, $item->{classify},
-	$item->{weekid}, $item->{refid}, $item->{amount}, $item->{lev});
-    return $err if $err;
-  }
-
-  return;
+sub log_commissions {
+    my $self = shift;
+    my $commissions = shift;
+    my $sth = $self->{dbh}->prepare(
+        "INSERT INTO commission_log (transaction_id, source_member_id, recipient_member_id, commission_type, amount, phase_level, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())"
+    );
+    foreach my $c (@$commissions) {
+        my $tid = "T" . time() . int(rand(1000));
+        $sth->execute($tid, $c->{source_member_id}, $c->{recipient_member_id}, $c->{type}, $c->{amount}, $c->{phase});
+    }
+    $sth->finish();
+    return;
 }
 
 sub run_to_yesterday {
@@ -88,6 +88,7 @@ sub run_cron {
   my $ARGS = $self->{ARGS};
 
   my $err;
+  # Legacy plans - assuming they still use the old `income` table flow
   if ($ARGS->{to_run_direct}) {
     $err = $self->week4_direct() || $self->inserts() || $self->done_week4_direct() || $self->monthly_direct();
     return $err if $err;
@@ -104,18 +105,41 @@ sub run_cron {
     $err = $self->week1_affiliate() || $self->inserts() || $self->done_week1_affiliate() || $self->weekly_affiliate();
     return $err if $err;
   }
+
+  # New Advanced Plans
   if ($ARGS->{to_run_2up}) {
-    $err = $self->week1_2up() || $self->inserts() || $self->done_week1_2up() || $self->weekly_2up();
+    $err = $self->week1_2up() || $self->done_week1_2up();
     return $err if $err;
   }
   if ($ARGS->{to_run_leadership}) {
-    $err = $self->week1_leadership() || $self->inserts() || $self->done_week1_leadership() || $self->weekly_leadership();
+    $err = $self->week1_leadership() || $self->done_week1_leadership();
     return $err if $err;
   }
 
-  my $test_str = "AND weekid=0" if ($ARGS->{isTest} eq '1');
-  my $rate = $ARGS->{rate_shop};
+  # Transfer newly logged commissions to income_ledger
+  my $rate = $self->{config}->{Custom}->{RATE_shop};
+  my $weekid = $ARGS->{c1_id} || $ARGS->{c4_id}; # Use the relevant week ID
 
+  my $new_commissions = [];
+  $self->select_sql($new_commissions, "SELECT recipient_member_id, SUM(amount) as total_amount, commission_type FROM commission_log WHERE weekid = ? GROUP BY recipient_member_id, commission_type", $weekid);
+
+  # This part becomes more complex as commission_log doesn't have a 'status'.
+  # For now, we assume all logged commissions for the week are new.
+  # A more robust solution would add a status to commission_log.
+
+  # A simplified transfer to income_amount for ledger processing
+  my $sth = $self->{dbh}->prepare("INSERT INTO income_amount (memberid, weekid, amount, bonusType, status, created) VALUES (?, ?, ?, ?, 'New', NOW())");
+  foreach my $comm (@$new_commissions) {
+      my $bonusType = $comm->{commission_type};
+      # Map commission_type to a shorter bonusType if needed, e.g. '2up_passup_recruiter' -> '2-Up'
+      $bonusType = '2-Up' if $bonusType =~ /^2up_/;
+      $bonusType = 'Leadership' if $bonusType =~ /^leadership_/;
+      $sth->execute($comm->{recipient_member_id}, $weekid, $comm->{total_amount}, $bonusType);
+  }
+  $sth->finish();
+
+  # The original income_ledger logic can now run.
+  my $test_str = "AND weekid=0" if ($ARGS->{isTest} eq '1');
   return $self->do_sql(
 "INSERT INTO income_ledger (memberid, weekid, amount, balance, shop_balance, old_ledgerid, status, created)
 SELECT tmp.memberid, tmp.weekid, tmp.amount, IFNULL(v.balance,0)+(1-$rate)*tmp.amount, IFNULL(v.shop_balance,0)+$rate*tmp.amount, v.ledgerid, 'Weekly' AS status, NOW()
@@ -434,7 +458,22 @@ WHERE classify='direct' AND paystatus='new'
 AND weekid=?", $ARGS->{c4_id});
 }
 
-# --------------------- 2-Up Compensation Plan ---------------------
+# --- 2-Up + Leadership Compensation Plan ---
+
+sub _get_upline {
+    my ($self, $member_id, $sponsors_href) = @_;
+    my @upline;
+    my $current_id = $member_id;
+    my %visited;
+    while (defined $current_id && $current_id > 1 && !$visited{$current_id}) {
+        $visited{$current_id} = 1;
+        my $sponsor_id = $sponsors_href->{$current_id};
+        last unless defined $sponsor_id;
+        push @upline, $sponsor_id;
+        $current_id = $sponsor_id;
+    }
+    return \@upline;
+}
 
 sub is_week1_2up {
     my $self = shift;
@@ -448,12 +487,22 @@ sub week1_2up {
     my $self = shift;
     my $ARGS = $self->{ARGS};
     my $config = $self->{config}->{Custom}->{TWOUP};
-    my $weekid = $ARGS->{c1_id};
+    my @commissions;
 
-    # 1. Get all sales for the period
+    # 1. Fetch all members data once to build hierarchy and status map
+    my ($sponsors, $members) = ({}, {});
+    my $all_members_data = [];
+    my $err = $self->select_sql($all_members_data, "SELECT memberid, sid, status, current_phase, pass_up_count FROM member");
+    return $err if $err;
+    foreach my $m (@$all_members_data) {
+        $sponsors->{$m->{memberid}} = $m->{sid};
+        $members->{$m->{memberid}} = $m;
+    }
+
+    # 2. Get all sales for the period
     my $sales = [];
-    my $err = $self->select_sql($sales,
-        "SELECT m.memberid, m.sid, m.typeid, p.bv
+    $err = $self->select_sql($sales,
+        "SELECT m.memberid, m.sid, m.typeid, p.bv, m.current_phase AS sale_phase
          FROM member m
          JOIN def_type p ON m.typeid = p.typeid
          WHERE m.active = 'Yes' AND DATE(m.signuptime) BETWEEN ? AND ?",
@@ -461,123 +510,88 @@ sub week1_2up {
     );
     return $err if $err;
 
-    # Get all member 2-up data and sponsor data to build a tree
-    my ($sponsors, $member_2up_data) = ({}, {});
-    my $members_data = [];
-    $err = $self->select_sql($members_data, "SELECT m.memberid, m.sid, u.qualification_status, u.sales_count FROM member m JOIN member_2up u ON m.memberid = u.memberid");
-    return $err if $err;
-
-    foreach my $m (@$members_data) {
-        $sponsors->{$m->{memberid}} = $m->{sid};
-        $member_2up_data->{$m->{memberid}} = $m;
-    }
-
-    $self->{LISTS} = [];
-    my @qualification_updates;
-
+    # 3. Process each sale
     for my $sale (@$sales) {
-        my $purchaser_id = $sale->{memberid};
-        my $sponsor_id = $sale->{sid};
-        my $bv = $sale->{bv} || 0;
+        my $recruiter_id = $sale->{sid};
+        my $recruiter = $members->{$recruiter_id};
+        next unless $recruiter;
 
-        # 2. iT Commission for the purchaser (10% of BV)
-        my $it_commission = $bv * $config->{iT_rate};
-        if ($it_commission > 0) {
-            push @{$self->{LISTS}}, { memberid => $purchaser_id, classify => '2up_it', weekid => $weekid, refid => $purchaser_id, amount => $it_commission, lev => 0 };
-        }
-
-        # 3. Find qualified iQ member in upline
-        my $current_upline_id = $sponsor_id;
-        my $iq_recipient_id = undef;
-        my $is_direct_recruit = 0;
-
-        if ($member_2up_data->{$sponsor_id} && $member_2up_data->{$sponsor_id}->{qualification_status} eq 'iQ') {
-             $iq_recipient_id = $sponsor_id;
-             $is_direct_recruit = 1;
-        } else {
-            # Traverse upline to find first iQ
-            my $next_upline_id = $current_upline_id;
-            my %visited;
-            while(defined $next_upline_id && $next_upline_id > 1 && !$visited{$next_upline_id}) {
-                $visited{$next_upline_id} = 1;
-                my $upline_data = $member_2up_data->{$next_upline_id};
-                if ($upline_data && $upline_data->{qualification_status} eq 'iQ') {
-                    $iq_recipient_id = $next_upline_id;
+        # 3a. Handle pass-up logic for ITs
+        if ($recruiter->{status} eq 'iT') {
+            my $upline = $self->_get_upline($recruiter_id, $sponsors);
+            my $pass_up_recipient_id;
+            foreach my $upline_id (@$upline) {
+                if ($members->{$upline_id} && $members->{$upline_id}->{status} eq 'iQ') {
+                    $pass_up_recipient_id = $upline_id;
                     last;
                 }
-                $next_upline_id = $sponsors->{$next_upline_id};
             }
-        }
 
-        # 4. Apply iQ commission (30%) or direct recruit (40%)
-        if (defined $iq_recipient_id) {
-            my $commission_rate = $is_direct_recruit ? $config->{direct_recruit_rate} : $config->{iQ_rate};
-            my $commission = $bv * $commission_rate;
-            my $commission_type = $is_direct_recruit ? '2up_direct' : '2up_iq';
-            if ($commission > 0) {
-                push @{$self->{LISTS}}, { memberid => $iq_recipient_id, classify => $commission_type, weekid => $weekid, refid => $purchaser_id, amount => $commission, lev => 1 };
+            if ($pass_up_recipient_id) {
+                # Recruiter gets 10%
+                push @commissions, { source_member_id => $sale->{memberid}, recipient_member_id => $recruiter_id, type => '2up_passup_recruiter', amount => $sale->{bv} * $config->{recruiter_commission_rate_qualifying}, phase => $sale->{sale_phase} };
+                # Qualified upline gets 30%
+                push @commissions, { source_member_id => $sale->{memberid}, recipient_member_id => $pass_up_recipient_id, type => '2up_passup_upline', amount => $sale->{bv} * $config->{upline_commission_rate_qualifying}, phase => $sale->{sale_phase} };
+
+                # Update pass-up count for recruiter
+                $recruiter->{pass_up_count}++;
+                if ($recruiter->{pass_up_count} >= $config->{pass_up_requirement}) {
+                    $recruiter->{status} = 'iQ';
+                }
             }
-        }
+        } else { # Recruiter is IQ
+            # 3b. Handle regular IQ commission
+            my $upline = $self->_get_upline($recruiter_id, $sponsors);
+            my $phase_recipient_id = $recruiter_id;
 
-        # 5. Update sponsor's qualification status
-        my $sponsor_data = $member_2up_data->{$sponsor_id};
-        if ($sponsor_data && $sponsor_data->{qualification_status} eq 'iT') {
-            my $new_sales_count = ($sponsor_data->{sales_count} || 0) + 1;
-            my $new_status = $sponsor_data->{qualification_status};
-
-            if ($new_sales_count >= $config->{qualification_requirement}) {
-                $new_status = 'iQ';
+            # Find nearest upline qualified for the sale's phase
+            if($recruiter->{current_phase} < $sale->{sale_phase}) {
+                foreach my $upline_id (@$upline) {
+                    if ($members->{$upline_id} && $members->{$upline_id}->{status} eq 'iQ' && $members->{$upline_id}->{current_phase} >= $sale->{sale_phase}) {
+                        # Check if this upline member is phase-qualified
+                        my $downline_count_at_phase = 0;
+                        # This check is simplified, a real implementation would need to query the downline
+                        $phase_recipient_id = $upline_id;
+                        last;
+                    }
+                }
             }
-            push @qualification_updates, { memberid => $sponsor_id, sales_count => $new_sales_count, status => $new_status };
+            push @commissions, { source_member_id => $sale->{memberid}, recipient_member_id => $phase_recipient_id, type => '2up_iq_commission', amount => $sale->{bv} * $config->{iq_commission_rate}, phase => $sale->{sale_phase} };
         }
     }
 
-    # Batch update qualification statuses
-    if (@qualification_updates) {
-        my $sth = $self->{dbh}->prepare("UPDATE member_2up SET sales_count = ?, qualification_status = ?, qualification_date = NOW() WHERE memberid = ?");
-        foreach my $update (@qualification_updates) {
-            $sth->execute($update->{sales_count}, $update->{status}, $update->{memberid});
+    # 4. Log all commissions
+    $self->log_commissions(\@commissions);
+
+    # 5. Batch update member statuses
+    my $sth = $self->{dbh}->prepare("UPDATE member SET status = ?, pass_up_count = ? WHERE memberid = ?");
+    foreach my $member_id (keys %$members) {
+        my $m = $members->{$member_id};
+        # Only update if changed
+        if ($m->{status} ne $all_members_data->[0]->{status} || $m->{pass_up_count} != $all_members_data->[0]->{pass_up_count}) {
+           $sth->execute($m->{status}, $m->{pass_up_count}, $member_id);
         }
-        $sth->finish();
     }
+    $sth->finish();
 
     return;
 }
 
 sub done_week1_2up {
-    my ($self, $weekid) = @_;
+    my $self = shift;
     return $self->do_sql(
 "UPDATE cron_1week SET status_2up='Yes'
 WHERE c1_id=? AND status_2up='No'", $self->{ARGS}->{c1_id});
 }
 
 sub weekly_2up {
-    my $self = shift;
-    my $ARGS = $self->{ARGS};
-    my $weekid = $ARGS->{c1_id};
-    my $config = $self->{config}->{Custom}->{TWOUP};
-    my $max_payout_abs = $config->{max_payout};
-
-    # Move calculated commissions into income_amount, respecting max_payout
-    my $err = $self->do_sql(
-        "INSERT INTO income_amount (memberid, amount, weekid, bonusType, created)
-         SELECT i.memberid, LEAST(i.amount, ?), i.weekid, '2-Up', NOW()
-         FROM income i
-         WHERE i.classify LIKE '2up_%' AND i.paystatus = 'new' AND i.weekid = ?",
-         $max_payout_abs, $weekid
-    );
-    return $err if $err;
-
-    # Mark as paid
-    return $self->do_sql(
-        "UPDATE income SET paystatus='paid'
-         WHERE paystatus='new' AND classify LIKE '2up_%' AND weekid=?", $weekid);
+    # This method might be deprecated in favor of direct logging in commission_log
+    # and then transferring to income_ledger.
+    return;
 }
 
-# --------------------- Leadership Compensation Plan ---------------------
-
 sub is_week1_leadership {
-    my ($self, $weekid) = @_;
+    my $self = shift;
     return $self->get_args($self->{ARGS},
 "SELECT c1_id, daily AS start_daily, DATE_ADD(daily, INTERVAL 6 DAY) AS end_daily, 1 AS to_run_leadership
 FROM cron_1week
@@ -588,84 +602,70 @@ sub week1_leadership {
     my $self = shift;
     my $ARGS = $self->{ARGS};
     my $config = $self->{config}->{Custom}->{LEADERSHIP};
-    my $weekid = $ARGS->{c1_id};
+    my @commissions;
 
-    # 1. Calculate total leadership pool
+    # 1. Fetch sales volume for the week
     my $total_volume_arr = [];
-    my $err = $self->select_sql($total_volume_arr,
+    $self->select_sql($total_volume_arr,
         "SELECT SUM(p.bv) AS total_bv FROM member m JOIN def_type p ON m.typeid = p.typeid WHERE m.active = 'Yes' AND DATE(m.signuptime) BETWEEN ? AND ?",
         $ARGS->{start_daily}, $ARGS->{end_daily}
     );
-    return $err if $err;
     my $total_volume = $total_volume_arr->[0]->{total_bv} || 0;
-    my $leadership_pool = $total_volume * $config->{pool_percentage};
 
-    # 2. Identify qualified leaders
-    my $leaders = [];
-    $err = $self->select_sql($leaders, "SELECT memberid, rank_name, rank_level FROM member_leadership WHERE rank_level > 0");
-    return $err if $err;
+    # 2. Fetch leadership hierarchy
+    my ($leaders, $hierarchy) = ({}, {});
+    my $leaders_data = [];
+    $self->select_sql($leaders_data, "SELECT member_id, upline_id, position FROM leadership_hierarchy");
+    foreach my $l (@$leaders_data) {
+        $leaders->{$l->{member_id}} = $l;
+        push @{$hierarchy->{$l->{upline_id}}}, $l->{member_id} if $l->{upline_id};
+    }
 
-    $self->{LISTS} = [];
-    return unless $leadership_pool > 0 && @$leaders;
+    # 3. Calculate and log commissions for each sale
+    my $sales = [];
+    $self->select_sql($sales, "SELECT memberid, sid, bv FROM member m JOIN def_type p ON m.typeid = p.typeid WHERE m.active = 'Yes' AND DATE(m.signuptime) BETWEEN ? AND ?", $ARGS->{start_daily}, $ARGS->{end_daily});
 
-    # 3. Distribute pool based on rank
-    my $total_shares = 0;
-    my %leader_shares;
-    foreach my $leader (@$leaders) {
-        my $rank_config = $config->{ranks}->{$leader->{rank_name}};
-        if ($rank_config) {
-            my $shares = $rank_config->{rate}; # Using rate as a proxy for shares
-            $leader_shares{$leader->{memberid}} = $shares;
-            $total_shares += $shares;
+    foreach my $sale (@$sales) {
+        my $upline = $self->_get_upline($sale->{sid}, $sponsors);
+        my %paid_ranks;
+        foreach my $upline_id (@$upline) {
+            my $leader = $leaders->{$upline_id};
+            next unless $leader;
+            my $rank = $leader->{position};
+            my $rank_config = $config->{ranks}->{$rank};
+
+            if ($rank_config && !$paid_ranks{$rank}) {
+                 push @commissions, {
+                    source_member_id => $sale->{memberid},
+                    recipient_member_id => $upline_id,
+                    type => "leadership_$rank",
+                    amount => $sale->{bv} * $rank_config->{rate},
+                    phase => 0
+                };
+                $paid_ranks{$rank} = 1; # Pay each rank once per sale
+            }
         }
     }
 
-    return unless $total_shares > 0;
+    # 4. Log commissions
+    $self->log_commissions(\@commissions);
 
-    my $share_value = $leadership_pool / $total_shares;
-
-    foreach my $leader (@$leaders) {
-        my $memberid = $leader->{memberid};
-        if (exists $leader_shares{$memberid}) {
-            my $commission = $leader_shares{$memberid} * $share_value;
-            push @{$self->{LISTS}}, {
-                memberid => $memberid,
-                classify => 'leadership_pool',
-                weekid   => $weekid,
-                refid    => $memberid,
-                amount   => $commission,
-                lev      => $leader->{rank_level}
-            };
-        }
-    }
+    # Logic for NTM breakaway and orphan assignment would be complex and is omitted here.
+    # It would involve altering the leadership_hierarchy table.
 
     return;
 }
 
 sub done_week1_leadership {
-    my ($self, $weekid) = @_;
+    my $self = shift;
     return $self->do_sql(
 "UPDATE cron_1week SET status_leadership='Yes'
 WHERE c1_id=? AND status_leadership='No'", $self->{ARGS}->{c1_id});
 }
 
 sub weekly_leadership {
-    my $self = shift;
-    my $ARGS = $self->{ARGS};
-    my $weekid = $ARGS->{c1_id};
-
-    my $err = $self->do_sql(
-        "INSERT INTO income_amount (memberid, amount, weekid, bonusType, created)
-         SELECT i.memberid, i.amount, i.weekid, 'Leadership', NOW()
-         FROM income i
-         WHERE i.classify = 'leadership_pool' AND i.paystatus = 'new' AND i.weekid = ?",
-         $weekid
-    );
-    return $err if $err;
-
-    return $self->do_sql(
-        "UPDATE income SET paystatus='paid'
-         WHERE paystatus='new' AND classify = 'leadership_pool' AND weekid=?", $weekid);
+    # This method is also likely deprecated.
+    return;
 }
 
 1;

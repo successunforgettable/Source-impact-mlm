@@ -24,60 +24,21 @@
         "MAX_mslevel":10,
         "ENTER":"/m/en/member?action=edit",
         "TWOUP": {
-            "iT_rate": 0.10,
-            "iQ_rate": 0.30,
-            "direct_recruit_rate": 0.40,
-            "qualification_requirement": 2,
-            "max_payout": 40
+            "commission_total": 0.40,
+            "pass_up_requirement": 2,
+            "recruiter_commission_rate_qualifying": 0.10,
+            "upline_commission_rate_qualifying": 0.30,
+            "iq_commission_rate": 0.40,
+            "phases": 10
         },
         "LEADERSHIP": {
-            "pool_percentage": 0.10,
+            "commission_total": 0.14,
             "ranks": {
-                "ASC": {
-                    "rate": 0.05,
-                    "level": 1,
-                    "requirements": {
-                        "active_members": 15,
-                        "timeframe_days": 90,
-                        "personal_volume": 500,
-                        "team_volume": 2000,
-                        "direct_referrals": 3
-                    }
-                },
-                "SC": {
-                    "rate": 0.10,
-                    "level": 2,
-                    "requirements": {
-                        "sales_required": 21,
-                        "timeframe_days": 30,
-                        "automatic_promotion": true
-                    }
-                },
-                "VP": {
-                    "rate": 0.02,
-                    "level": 3,
-                    "requirements": {
-                        "application_based": true,
-                        "sc_tenure_months": 6,
-                        "training_required": true
-                    }
-                },
-                "PRESIDENT": {
-                    "rate": 0.01,
-                    "level": 4,
-                    "requirements": {
-                        "invitation_only": true,
-                        "exceptional_performance": true
-                    }
-                },
-                "RD": {
-                    "rate": 0.01,
-                    "level": 5,
-                    "requirements": {
-                        "invitation_only": true,
-                        "regional_oversight": true
-                    }
-                }
+                "Assistant NTM": { "rate": 0.05 },
+                "NTM": { "rate": 0.05 },
+                "VP": { "rate": 0.02 },
+                "President": { "rate": 0.01 },
+                "RD": { "rate": 0.01 }
             }
         }
     },
