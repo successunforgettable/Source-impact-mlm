@@ -1,7 +1,10 @@
 
+mkdir -p docker/app
+
+cat > docker/app/Dockerfile <<'EOF'
 FROM perl:5.36
 
-# Install Apache + Perl modules needed
+# Install Apache + Perl modules
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     apache2 \
     libdbi-perl libdbd-mysql-perl \
@@ -11,18 +14,16 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
 
 # Render listens on 8080
 RUN sed -i 's/Listen 80/Listen 8080/' /etc/apache2/ports.conf
-
-# Enable CGI + alias
 RUN a2enmod cgid alias
 
 # App files
 WORKDIR /app
 COPY . /app
 
-# Site config
+# Apache vhost
 COPY docker/app/mlm-apache.conf /etc/apache2/sites-available/000-default.conf
 
-# ✅ Create guaranteed CGI test scripts in system CGI dir
+# ✅ Create guaranteed CGI test scripts in the system CGI dir
 RUN set -e; \
   install -d -m 755 /usr/lib/cgi-bin; \
   printf '%s\n' '#!/usr/bin/env perl' \
@@ -45,5 +46,5 @@ RUN set -e; \
 
 ENV APP_ENV=production PORT=8080
 EXPOSE 8080
-
 CMD ["apache2ctl", "-D", "FOREGROUND"]
+EOF
