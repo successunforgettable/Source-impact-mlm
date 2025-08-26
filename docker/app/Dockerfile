@@ -1,5 +1,5 @@
 FROM perl:5.36
-RUN echo "USING NEW DOCKERFILE — marker v4"
+RUN echo "USING NEW DOCKERFILE — marker v5"
 
 # Install Apache + Perl modules
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
@@ -9,7 +9,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     libdigest-hmac-perl libcgi-pm-perl \
  && rm -rf /var/lib/apt/lists/*
 
-# Render listens on 8080
+# Render listens on 8080 instead of 80
 RUN sed -i 's/Listen 80/Listen 8080/' /etc/apache2/ports.conf
 RUN a2enmod cgid alias
 
@@ -41,6 +41,10 @@ RUN set -e; \
     > /usr/lib/cgi-bin/goto; \
   chmod 755 /usr/lib/cgi-bin/goto
 
+# Diagnostics entrypoint (runtime check)
+COPY docker/app/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 ENV APP_ENV=production PORT=8080
 EXPOSE 8080
-CMD ["apache2ctl", "-D", "FOREGROUND"]
+ENTRYPOINT ["/entrypoint.sh"]
