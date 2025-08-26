@@ -1,6 +1,3 @@
-mkdir -p docker/app
-
-cat > docker/app/Dockerfile <<'EOF'
 FROM perl:5.36
 
 # Install Apache + Perl modules
@@ -46,4 +43,3 @@ RUN set -e; \
 ENV APP_ENV=production PORT=8080
 EXPOSE 8080
 CMD ["apache2ctl", "-D", "FOREGROUND"]
-EOF
