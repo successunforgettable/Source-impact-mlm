@@ -1,28 +1,21 @@
 {
-    "Document_root": "/app/mlm/www",
-    "Server_url": "http://127.0.0.1",
+    "Document_root": "/app/www",
+    "Server_url": "https://source-impact-mlm.onrender.com",
     "Project": "MLM",
     "Script": "/cgi-bin/goto",
-    "Template": "/app/mlm/views",
-    "Uploaddir": "/app/mlm/www/product",
+    "Template": "/app/views",
+    "Uploaddir": "/app/www/product",
+  
     "Pubrole": "p",
+  
     "Secret": "4cbcb3630567fcbd6a56f7b5b840632bbb38bc7db8e8cb7986c41c99d5fff4e9",
+  
     "Custom": {
       "SHOP_typeid": 100,
       "TOP_memberid": 1,
-      "BIN": {
-        "unit": 200,
-        "rate": 0.1,
-        "rate21": 0.15
-      },
-      "RATE_shop": 0.1,
-      "RATE_affiliate": 0.02,
-      "RATE_matchdown": 0.25,
-      "MAX_plevel": 6,
-      "MAX_slevel": 10,
-      "MAX_mplevel": 6,
-      "MAX_mslevel": 10,
-      "ENTER": "/m/en/member?action=edit",
+  
+      /* ==== COMPENSATION PLAN: ENABLED ONLY TWO-UP + LEADERSHIP ==== */
+  
       "TWOUP": {
         "iT_rate": 0.10,
         "iQ_rate": 0.30,
@@ -30,11 +23,11 @@
         "qualification_requirement": 2,
         "max_payout": 40
       },
+  
       "LEADERSHIP": {
         "pool_percentage": 0.10,
         "ranks": {
-          "ASC": {
-            "label": "Assistant NTM",
+          "ASTNTM": {
             "rate": 0.05,
             "level": 1,
             "requirements": {
@@ -45,8 +38,7 @@
               "direct_referrals": 3
             }
           },
-          "SC": {
-            "label": "NTM",
+          "NTM": {
             "rate": 0.10,
             "level": 2,
             "requirements": {
@@ -82,15 +74,21 @@
           }
         }
       },
-      "ENABLE": {
-        "TWOUP": true,
-        "LEADERSHIP": true,
-        "BINARY": false,
-        "UNILEVEL": false,
-        "TEAM": false,
-        "AFFILIATE": false
-      }
+  
+      /* General rates used elsewhere in UI/logic */
+      "RATE_shop": 0.10,
+      "RATE_affiliate": 0.02,
+      "RATE_matchdown": 0.25,
+  
+      /* Max levels relevant to legacy plans are kept for compatibility but not used by payout logic now */
+      "MAX_plevel": 6,
+      "MAX_slevel": 10,
+      "MAX_mplevel": 6,
+      "MAX_mslevel": 10,
+  
+      "ENTER": "/m/en/member?action=edit"
     },
+  
     "Chartags": {
       "html": {
         "Content_type": "text/html; charset='UTF-8'",
@@ -114,16 +112,19 @@
         "Case": 1
       }
     },
+  
     "Log": {
-      "filename": "/app/mlm/logs/debug.log",
+      "filename": "/app/logs/debug.log",
       "minlevel": 0,
       "maxlevel": "info"
     },
+  
     "Db": [
-      "dbi:mysql:mlm_db:127.0.0.1:3306",
-      "mlm_user",
-      "mlm_password123"
+      "dbi:mysql:mlm_db:YOUR_DB_HOST:3306",
+      "YOUR_DB_USER",
+      "YOUR_DB_PASSWORD"
     ],
+  
     "Roles": {
       "m": {
         "Id_name": "memberid",
@@ -144,7 +145,7 @@
         "Secret": "4cbcb3630567fcbd6a56f7b5b840632bbb38bc7db8e8cb7986c41c99d5fff4e9",
         "Coding": "4cbcb3630567fcbd6a56f7b5b840632bbb38bc7db8e8cb7986c41c99d5fff4e9",
         "Surface": "cm",
-        "Domain": "127.0.0.1",
+        "Domain": "source-impact-mlm.onrender.com",
         "Duration": 86400,
         "Max_age": 86400,
         "Logout": "/",
@@ -175,6 +176,7 @@
           }
         }
       },
+  
       "a": {
         "Id_name": "adminid",
         "Is_admin": true,
@@ -184,7 +186,7 @@
         ],
         "Type_id": 1,
         "Surface": "ca",
-        "Domain": "127.0.0.1",
+        "Domain": "source-impact-mlm.onrender.com",
         "Duration": 86400,
         "Max_age": 86400,
         "Secret": "4cbcb3630567fcbd6a56f7b5b840632bbb38bc7db8e8cb7986c41c99d5fff4e9",
@@ -204,6 +206,7 @@
         }
       }
     },
+  
     "Errors": {
       "3001": "wrong privilege",
       "3002": "wrong admin",

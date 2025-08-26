@@ -1,7 +1,7 @@
 FROM perl:5.36
 RUN echo "USING NEW DOCKERFILE — marker v5"
 
-# Install Apache + Perl modules
+# Apache + Perl modules
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     apache2 \
     libdbi-perl libdbd-mysql-perl \
@@ -9,7 +9,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     libdigest-hmac-perl libcgi-pm-perl \
  && rm -rf /var/lib/apt/lists/*
 
-# Render listens on 8080 instead of 80
+# Render uses 8080
 RUN sed -i 's/Listen 80/Listen 8080/' /etc/apache2/ports.conf
 RUN a2enmod cgid alias
 
@@ -17,34 +17,27 @@ RUN a2enmod cgid alias
 WORKDIR /app
 COPY . /app
 
-# Apache vhost
+# --- Genelet + Perl path (README requirement) ---
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
+RUN git clone https://github.com/genelet/perl.git /opt/genelet
+ENV PERL5LIB=/opt/genelet:/app/lib
+
+# --- Real router at /app/cgi-bin/goto (README Script=/cgi-bin/goto) ---
+RUN mkdir -p /app/cgi-bin && \
+    printf '%s\n' '#!/usr/bin/env perl' \
+      'use strict; use warnings;' \
+      'use FindBin;' \
+      'use lib $ENV{PERL5LIB};' \
+      'require Genelet::Dispatch;' \
+      'Genelet::Dispatch::run();' \
+      > /app/cgi-bin/goto && chmod 755 /app/cgi-bin/goto
+
+# Apache vhost (maps CGI to /app/cgi-bin; static /app/www)
 COPY docker/app/mlm-apache.conf /etc/apache2/sites-available/000-default.conf
 
-# Create guaranteed CGI test scripts in the system CGI dir
-RUN set -e; \
-  install -d -m 755 /usr/lib/cgi-bin; \
-  printf '%s\n' '#!/usr/bin/env perl' \
-    'use strict; use warnings;' \
-    'print "Content-Type: text/plain; charset=utf-8\\n\\n";' \
-    'for my $k (sort keys %ENV) {' \
-    '  my $v = $ENV{$k} // q{};' \
-    '  $v =~ s/\\n/\\\\n/g;' \
-    '  print "$k=$v\\n";' \
-    '}' \
-    > /usr/lib/cgi-bin/env.cgi; \
-  chmod 755 /usr/lib/cgi-bin/env.cgi; \
-  printf '%s\n' '#!/usr/bin/env perl' \
-    'use strict; use warnings; use CGI qw(:standard);' \
-    'print header(-type => q{text/plain; charset=utf-8});' \
-    'print "OK: CGI is alive at ".scalar(localtime)."\\n";' \
-    'my $p = param(q{ping}); print "ping=$p\\n" if defined $p;' \
-    > /usr/lib/cgi-bin/goto; \
-  chmod 755 /usr/lib/cgi-bin/goto
-
-# Diagnostics entrypoint (runtime check)
-COPY docker/app/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+# Permissions
+RUN chmod 755 /app /app/cgi-bin && find /app/cgi-bin -type f -exec chmod 755 {} \;
 
 ENV APP_ENV=production PORT=8080
 EXPOSE 8080
-ENTRYPOINT ["/entrypoint.sh"]
+CMD ["apache2ctl", "-D", "FOREGROUND"]
