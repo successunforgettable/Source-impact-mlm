@@ -1,0 +1,38 @@
+name: prove-phases
+
+on:
+  workflow_dispatch:
+
+jobs:
+  run-proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install MySQL
+        uses: mirromutth/mysql-action@v1.1
+        with:
+          mysql version: '8.0'
+          mysql database: 'mlm_system'
+          mysql user: 'mlm_user'
+          mysql password: 'mlm_password123'
+      - name: Setup Perl
+        uses: shogo82148/actions-setup-perl@v1
+        with:
+          perl-version: '5.34'
+      - name: Install deps
+        run: |
+          cpanm --notest DBI DBD::mysql JSON
+      - name: Run proof
+        run: |
+          make prove-phases
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: proof-phases
+          path: |
+            docs/PROOF-PHASES.md
+            tmp/**
+
+
+
+

@@ -1,0 +1,10 @@
+CREATE TABLE IF NOT EXISTS phase_catalog (
+  phase_no INT PRIMARY KEY,
+  price DECIMAL(12,2) NOT NULL,
+  capacity_default INT NOT NULL DEFAULT 500,
+  active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+
+

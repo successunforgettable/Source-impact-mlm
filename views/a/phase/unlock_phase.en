@@ -1,0 +1,12 @@
+[% INCLUDE start.en %]
+
+<div class="alert alert-success" role="alert">
+    <h4 class="alert-heading">Phase Unlocked!</h4>
+    <p>Phase has been successfully unlocked for the member.</p>
+    <hr>
+    <p class="mb-0"><a href="phase" class="btn btn-primary">Back to Phase Management</a></p>
+</div>
+
+[% INCLUDE end.en %]
+
+

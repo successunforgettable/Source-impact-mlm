@@ -1,0 +1,86 @@
+[% INCLUDE start.en %]
+
+<h4>Phase Management & Member Progress</h4>
+
+<div class="row">
+    <div class="col-md-6">
+        <h5>Unlock Phase for Member</h5>
+        <form class="form" action="phase" method="post">
+            <input type="hidden" name="action" value="unlock_phase">
+            <div class="form-group">
+                <label for="memberid">Member ID</label>
+                <input type="number" class="form-control" name="memberid" placeholder="Member ID" required>
+            </div>
+            <div class="form-group">
+                <label for="phase_number">Phase Number</label>
+                <input type="number" class="form-control" name="phase_number" placeholder="0-99" min="0" max="99" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Unlock Phase</button>
+        </form>
+    </div>
+    
+    <div class="col-md-6">
+        <h5>View Member Progress</h5>
+        <form class="form" action="phase" method="get">
+            <input type="hidden" name="action" value="member_progress">
+            <div class="form-group">
+                <label for="memberid">Member ID</label>
+                <input type="number" class="form-control" name="memberid" placeholder="Member ID" required>
+            </div>
+            <button type="submit" class="btn btn-info">View Progress</button>
+        </form>
+    </div>
+</div>
+
+[% IF action == 'member_progress' && topics.size > 0 %]
+<div class="mt-4">
+    <h5>Member [% memberid %] Progress</h5>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Phase</th>
+                    <th>Title</th>
+                    <th>Price</th>
+                    <th>Status</th>
+                    <th>Purchases</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                [% FOREACH item=topics %]
+                <tr>
+                    <td>[% item.phase_number %]</td>
+                    <td>[% item.title %]</td>
+                    <td>$[% item.price %]</td>
+                    <td>
+                        [% IF item.completed %]
+                            <span class="badge badge-success">Completed</span>
+                        [% ELSIF item.unlocked %]
+                            <span class="badge badge-warning">Unlocked</span>
+                        [% ELSE %]
+                            <span class="badge badge-secondary">Locked</span>
+                        [% END %]
+                    </td>
+                    <td>[% item.purchase_count %]</td>
+                    <td>
+                        [% UNLESS item.unlocked %]
+                        <form method="post" style="display:inline;">
+                            <input type="hidden" name="action" value="unlock_phase">
+                            <input type="hidden" name="memberid" value="[% memberid %]">
+                            <input type="hidden" name="phase_number" value="[% item.phase_number %]">
+                            <button type="submit" class="btn btn-sm btn-primary">Unlock</button>
+                        </form>
+                        [% END %]
+                    </td>
+                </tr>
+                [% END %]
+            </tbody>
+        </table>
+    </div>
+</div>
+[% END %]
+
+[% INCLUDE end.en %]
+
+

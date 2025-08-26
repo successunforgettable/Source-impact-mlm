@@ -1,0 +1,19 @@
+{
+  "name": "mlm",
+  "version": "1.0.0",
+  "description": "This is a comprehensive open-source Multi-Level Marketing (MLM) package. It offers features such as registration, membership management, compensation structures, automated tasks, shopping capabilities, ticketing systems, and backend administration. The package includes four built-in bonus plans: unilevel, team, pairing, and affiliate rewards. Developers can easily extend these to include other customized bonus plans.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.54.2"
+  }
+}

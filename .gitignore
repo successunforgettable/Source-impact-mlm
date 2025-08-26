@@ -7,3 +7,21 @@ lib/Admin/admin.t
 lib/Placement/placement.t
 www/product
 www/debug.log
+cat > .gitignore << 'EOF'
+# OS
+.DS_Store
+
+# Node / web
+node_modules
+playwright-report
+test-results
+tmp
+dist
+coverage
+
+# Python/cache
+**/__pycache__
+
+# Logs & misc
+*.log
+EOF

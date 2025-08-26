@@ -1,0 +1,14 @@
+CREATE TABLE IF NOT EXISTS phase_instance (
+  instance_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  phase_no INT NOT NULL,
+  status ENUM('RECRUITING','ACTIVE','CLOSED') NOT NULL DEFAULT 'RECRUITING',
+  capacity INT NOT NULL,
+  joined_count INT NOT NULL DEFAULT 0,
+  opened_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  started_at DATETIME NULL,
+  closed_at DATETIME NULL,
+  KEY (phase_no, status)
+);
+
+
+

@@ -1,0 +1,7 @@
+{
+    "role": "a",
+    "model": "MLM::Challenge::Model",
+    "filter": "MLM::Challenge::Filter"
+}
+
+

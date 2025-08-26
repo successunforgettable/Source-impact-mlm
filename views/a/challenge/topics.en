@@ -1,0 +1,361 @@
+[% INCLUDE start.en %]
+
+<h4>Challenge Store Management</h4>
+
+<div class="row">
+    <div class="col-md-12">
+        <ul class="nav nav-tabs" id="challengeTabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="categories-tab" data-toggle="tab" href="#categories" role="tab">Categories</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="items-tab" data-toggle="tab" href="#items" role="tab">Items</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="packages-tab" data-toggle="tab" href="#packages" role="tab">Packages</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="unlocks-tab" data-toggle="tab" href="#unlocks" role="tab">Member Unlocks</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="orders-tab" data-toggle="tab" href="#orders" role="tab">Orders</a>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<div class="tab-content mt-3" id="challengeTabContent">
+    <!-- Categories Tab -->
+    <div class="tab-pane fade show active" id="categories" role="tabpanel">
+        <h5>Challenge Categories</h5>
+        
+        <form class="form mb-4" action="challenge" method="post">
+            <input type="hidden" name="action" value="insert">
+            <input type="hidden" name="type" value="category">
+            <div class="row">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" name="name" placeholder="Category Name" required>
+                </div>
+                <div class="col-md-4">
+                    <input type="text" class="form-control" name="slug" placeholder="category-slug" required>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary">Add Category</button>
+                </div>
+            </div>
+        </form>
+        
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Slug</th>
+                        <th>Active</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="categoriesTable">
+                    <!-- Categories will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Items Tab -->
+    <div class="tab-pane fade" id="items" role="tabpanel">
+        <h5>Challenge Items</h5>
+        
+        <form class="form mb-4" action="challenge" method="post">
+            <input type="hidden" name="action" value="insert">
+            <input type="hidden" name="type" value="item">
+            <div class="row">
+                <div class="col-md-3">
+                    <select class="form-control" name="category_id" required>
+                        <option value="">Select Category</option>
+                        <!-- Categories will be populated -->
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <input type="text" class="form-control" name="title" placeholder="Item Title" required>
+                </div>
+                <div class="col-md-3">
+                    <input type="text" class="form-control" name="slug" placeholder="item-slug" required>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary">Add Item</button>
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-md-6">
+                    <textarea class="form-control" name="description" placeholder="Description" rows="2"></textarea>
+                </div>
+                <div class="col-md-6">
+                    <input type="url" class="form-control" name="image_url" placeholder="Image URL">
+                </div>
+            </div>
+        </form>
+        
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Category</th>
+                        <th>Title</th>
+                        <th>Slug</th>
+                        <th>Active</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="itemsTable">
+                    <!-- Items will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Packages Tab -->
+    <div class="tab-pane fade" id="packages" role="tabpanel">
+        <h5>Challenge Packages (Phases)</h5>
+        
+        <form class="form mb-4" action="challenge" method="post">
+            <input type="hidden" name="action" value="insert">
+            <input type="hidden" name="type" value="package">
+            <div class="row">
+                <div class="col-md-2">
+                    <select class="form-control" name="item_id" required>
+                        <option value="">Select Item</option>
+                        <!-- Items will be populated -->
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <input type="number" class="form-control" name="phase_number" placeholder="Phase #" min="0" required>
+                </div>
+                <div class="col-md-3">
+                    <input type="text" class="form-control" name="title" placeholder="Package Title" required>
+                </div>
+                <div class="col-md-2">
+                    <input type="number" step="0.01" class="form-control" name="price" placeholder="Price" required>
+                </div>
+                <div class="col-md-1">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" name="requires_prev" value="1">
+                        <label class="form-check-label">Req Prev</label>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary">Add Package</button>
+                </div>
+            </div>
+        </form>
+        
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Phase</th>
+                        <th>Item</th>
+                        <th>Title</th>
+                        <th>Price</th>
+                        <th>Requires Prev</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="packagesTable">
+                    <!-- Packages will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Member Unlocks Tab -->
+    <div class="tab-pane fade" id="unlocks" role="tabpanel">
+        <h5>Member Phase Management</h5>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Unlock Phase for Member</h6>
+                <form class="form" action="challenge" method="post">
+                    <input type="hidden" name="action" value="unlock_phase">
+                    <div class="form-group">
+                        <input type="number" class="form-control" name="member_id" placeholder="Member ID" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="number" class="form-control" name="phase_number" placeholder="Phase Number" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Unlock Phase</button>
+                </form>
+            </div>
+            
+            <div class="col-md-6">
+                <h6>Mark Phase Completed</h6>
+                <form class="form" action="challenge" method="post">
+                    <input type="hidden" name="action" value="complete_phase">
+                    <div class="form-group">
+                        <input type="number" class="form-control" name="member_id" placeholder="Member ID" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="number" class="form-control" name="phase_number" placeholder="Phase Number" required>
+                    </div>
+                    <button type="submit" class="btn btn-success">Mark Complete</button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="mt-4">
+            <h6>View Member Progress</h6>
+            <form class="form" action="challenge" method="get">
+                <input type="hidden" name="action" value="member_progress">
+                <div class="input-group">
+                    <input type="number" class="form-control" name="member_id" placeholder="Member ID" required>
+                    <div class="input-group-append">
+                        <button type="submit" class="btn btn-info">View Progress</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Orders Tab -->
+    <div class="tab-pane fade" id="orders" role="tabpanel">
+        <h5>Challenge Orders</h5>
+        
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Member</th>
+                        <th>Phase</th>
+                        <th>Title</th>
+                        <th>Amount</th>
+                        <th>Repeat</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody id="ordersTable">
+                    <!-- Orders will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Load categories by default
+    loadChallengeData('categories');
+    
+    // Tab click handlers
+    $('#categories-tab').click(function() { loadChallengeData('categories'); });
+    $('#items-tab').click(function() { loadChallengeData('items'); });
+    $('#packages-tab').click(function() { loadChallengeData('packages'); });
+    $('#orders-tab').click(function() { loadChallengeData('orders'); });
+});
+
+function loadChallengeData(type) {
+    $.get('challenge?action=topics&type=' + type)
+        .done(function(data) {
+            if (type === 'categories') {
+                updateCategoriesTable(data);
+            } else if (type === 'items') {
+                updateItemsTable(data);
+            } else if (type === 'packages') {
+                updatePackagesTable(data);
+            } else if (type === 'orders') {
+                updateOrdersTable(data);
+            }
+        });
+}
+
+function updateCategoriesTable(data) {
+    var html = '';
+    $.each(data, function(i, cat) {
+        html += '<tr>' +
+            '<td>' + cat.category_id + '</td>' +
+            '<td>' + cat.name + '</td>' +
+            '<td>' + cat.slug + '</td>' +
+            '<td>' + (cat.active ? 'Yes' : 'No') + '</td>' +
+            '<td>' + cat.created_at + '</td>' +
+            '<td><a href="#" onclick="deleteCategory(' + cat.category_id + ')" class="btn btn-sm btn-danger">Delete</a></td>' +
+            '</tr>';
+    });
+    $('#categoriesTable').html(html);
+}
+
+function updateItemsTable(data) {
+    var html = '';
+    $.each(data, function(i, item) {
+        html += '<tr>' +
+            '<td>' + item.item_id + '</td>' +
+            '<td>' + item.category_name + '</td>' +
+            '<td>' + item.title + '</td>' +
+            '<td>' + item.slug + '</td>' +
+            '<td>' + (item.active ? 'Yes' : 'No') + '</td>' +
+            '<td><a href="#" onclick="deleteItem(' + item.item_id + ')" class="btn btn-sm btn-danger">Delete</a></td>' +
+            '</tr>';
+    });
+    $('#itemsTable').html(html);
+}
+
+function updatePackagesTable(data) {
+    var html = '';
+    $.each(data, function(i, pkg) {
+        html += '<tr>' +
+            '<td>' + pkg.package_id + '</td>' +
+            '<td>' + pkg.phase_number + '</td>' +
+            '<td>' + pkg.item_title + '</td>' +
+            '<td>' + pkg.title + '</td>' +
+            '<td>$' + pkg.price + '</td>' +
+            '<td>' + (pkg.requires_prev ? 'Yes' : 'No') + '</td>' +
+            '<td><a href="#" onclick="deletePackage(' + pkg.package_id + ')" class="btn btn-sm btn-danger">Delete</a></td>' +
+            '</tr>';
+    });
+    $('#packagesTable').html(html);
+}
+
+function updateOrdersTable(data) {
+    var html = '';
+    $.each(data, function(i, order) {
+        html += '<tr>' +
+            '<td>' + order.saleid + '</td>' +
+            '<td>' + order.memberid + '</td>' +
+            '<td>' + order.challenge_phase + '</td>' +
+            '<td>' + (order.phase_title || '-') + '</td>' +
+            '<td>$' + order.amount + '</td>' +
+            '<td>' + (order.repeat_flag ? 'Yes' : 'No') + '</td>' +
+            '<td>' + order.created + '</td>' +
+            '</tr>';
+    });
+    $('#ordersTable').html(html);
+}
+
+function deleteCategory(id) {
+    if (confirm('Delete this category?')) {
+        $.post('challenge', {action: 'delete', type: 'category', category_id: id})
+            .done(function() { loadChallengeData('categories'); });
+    }
+}
+
+function deleteItem(id) {
+    if (confirm('Delete this item?')) {
+        $.post('challenge', {action: 'delete', type: 'item', item_id: id})
+            .done(function() { loadChallengeData('items'); });
+    }
+}
+
+function deletePackage(id) {
+    if (confirm('Delete this package?')) {
+        $.post('challenge', {action: 'delete', type: 'package', package_id: id})
+            .done(function() { loadChallengeData('packages'); });
+    }
+}
+</script>
+
+[% INCLUDE end.en %]
+
+
