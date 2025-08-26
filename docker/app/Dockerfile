@@ -1,5 +1,5 @@
 FROM perl:5.36
-RUN echo "USING NEW DOCKERFILE — marker v3"
+RUN echo "USING NEW DOCKERFILE — marker v4"
 
 # Install Apache + Perl modules
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
