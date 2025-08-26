@@ -1,9 +1,10 @@
+cat > render.yaml <<'EOF'
 services:
   - type: web
     name: source-impact-mlm
     env: docker
-    plan: free                # or "starter", "standard", etc.
-    region: oregon            # pick your region if you want
+    plan: free
+    region: oregon
     dockerfilePath: docker/app/Dockerfile
     autoDeploy: true
     healthCheckPath: /healthz.html
@@ -12,3 +13,4 @@ services:
         value: "8080"
       - key: APP_ENV
         value: production
+EOF
